@@ -1,0 +1,131 @@
+<!DOCTYPE html>
+<html>
+<head>
+	<meta charset="utf-8">
+	<meta name="viewport" content="width=device-width, initial-scale=1">
+	<title>Payment</title>
+</head>
+<body>
+
+<main>
+	<div id="dropin-container"></div>
+</main>
+
+
+
+<script src="https://www.paypal.com/sdk/js?client-id={{PAYPAL_CLIENT_ID}}&currency=USD"></script>
+<!-- Don't forget to add PAYPAL_CLIENT_ID context variable to the view -->
+
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+	renderPaypalButtons({{ totals.total_amount }});
+
+  function renderPaypalButtons(amount_to_pay) {
+	amount_to_pay = String(amount_to_pay)
+	$('#dropin-container').empty();
+    paypal.Buttons({
+      // Create the order on the client side with the total amount from your context (for example, passed in from your view)
+      createOrder: function(data, actions) {
+        return actions.order.create({
+          purchase_units: [{
+            amount: {
+              value: amount_to_pay, // total amount as a string
+			  currency_code: 'USD'
+            }
+          }],
+          // Optional: you can set application_context for shipping preferences etc.
+          application_context: {
+            shipping_preference: 'NO_SHIPPING',
+			user_action: "PAY_NOW"
+          }
+        });
+      },
+      // When the customer approves the transaction, capture it.
+      onApprove: function(data, actions) {
+        return actions.order.capture().then(function(details) {
+          // Payment is successful – now send details to your backend
+		  Swal.fire({
+				title: "<p class='text-info'>Please Wait...</p>",
+				showConfirmButton: false,
+				allowOutsideClick: false,
+				willOpen: () => {
+					Swal.showLoading();
+				}
+			});
+
+		  
+          // Use AJAX to call endpoint
+          $.ajax({
+            type: "POST",
+            url: "{% url 'complete_payment' %}",
+            headers: {
+              "X-CSRFToken": $("[name=csrfmiddlewaretoken]").val(),
+              "X-Requested-With": "XMLHttpRequest"
+            },
+            data: {
+              orderID: data.orderID,
+              payerID: data.payerID,
+              // Optionally include more details if needed
+            },
+            success: function(response) {
+			  Swal.close();
+              if(response.success) {				
+                Swal.fire({
+                  title: "Payment Completed",
+                  text: "Payment has been successfully processed. Loading Order Summary...",
+                  icon: "success",
+                  confirmButtonText: "OK"
+                })
+				setTimeout(() => {
+					window.location.replace("{% url 'payment_success' %}");
+				}, 2000)
+				/*.then(function() {
+                  //window.location.replace("/");
+				  $('.show-only-track-order').click();
+					$(".btn-hide-modal-faq").on("click", function() {
+						window.location.replace("{% url 'payment_success' %}");
+					})
+                });*/
+              } else {
+                Swal.fire({
+                  title: "Error",
+                  text: response.error || "Payment failed",
+                  icon: "error",
+                  confirmButtonText: "OK"
+                })/*.then(function() {
+                  window.location.reload();
+                });*/
+              }
+            },
+            error: function(xhr) {
+			  Swal.close();
+              Swal.fire({
+                title: "Payment Error",
+                text: xhr.responseJSON?.error || "An error occurred during payment processing.",
+                icon: "error",
+                confirmButtonText: "OK"
+              });
+            }
+          });
+        });
+      },
+      // Handle errors during the payment process
+      onError: function(err) {
+		Swal.close();
+        Swal.fire({
+          title: "Payment error",
+          text: err+" Payment system initialization failed - please refresh the page.",
+          icon: "error",
+          confirmButtonText: "OK"
+        }).then(function() {
+          window.location.reload();
+        });
+      }
+    }).render('#dropin-container').then(function() {
+	  Swal.close();
+    });
+  };
+</script>
+</body>
+</html>
