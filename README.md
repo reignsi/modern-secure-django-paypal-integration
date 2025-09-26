@@ -78,33 +78,8 @@ urlpatterns = [
 
 ## 🏗️ Model Structure (Optional Reference)
 
-The integration works with these core models (customize as needed):
+The integration works with these core models (customize as needed) in models.py
 
-```python
-# models.py (Reference Implementation)
-class Order(models.Model):
-    user = models.ForeignKey(User, on_delete=models.SET_NULL, null=True, blank=True)
-    total_price = models.DecimalField(max_digits=10, decimal_places=2)
-    braintree_transaction_id = models.CharField(max_length=100, unique=True)
-    payment_status = models.CharField(max_length=20, choices=PAYMENT_STATUS)
-    # ... shipping fields
-
-class Cart(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    items = models.ManyToManyField('Product', through='CartItem')
-    
-class OrderItem(models.Model):
-    order = models.ForeignKey(Order, on_delete=models.CASCADE)
-    product = models.ForeignKey('Product', on_delete=models.CASCADE)
-    quantity = models.PositiveIntegerField()
-    price = models.DecimalField(max_digits=10, decimal_places=2)
-
-class Shipping(models.Model):
-    user = models.OneToOneField(User, on_delete=models.CASCADE)
-    full_name = models.CharField(max_length=100)
-    email = models.EmailField()
-    # ... address fields
-```
 
 ## 🔧 Implementation Guide
 
