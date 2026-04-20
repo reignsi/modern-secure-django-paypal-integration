@@ -49,7 +49,7 @@ Copy the provided `views.py` to your Django app and ensure all required models a
 Add the following to your `settings.py`:
 
 ```python
-# PayPal Configuration
+# PayPal Configuration, don't forget to setup environment variable for these keys
 if settings.DEBUG:
     PAYPAL_OAUTH_URL = "https://api-m.sandbox.paypal.com/v1/oauth2/token"
     PAYPAL_ORDERS_API_URL = "https://api-m.sandbox.paypal.com/v2/checkout/orders"
