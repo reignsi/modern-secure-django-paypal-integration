@@ -35,7 +35,7 @@ This Django application provides a complete PayPal payment integration solution 
 
 - Django 4.2+
 - Python 3.8+
-- PayPal Business Account
+- PayPal Business Account (Works for personal account too)
 - SSL Certificate (for production)
 
 ## ⚙️ Installation & Configuration
