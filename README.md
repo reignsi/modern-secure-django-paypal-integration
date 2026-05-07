@@ -198,7 +198,7 @@ except Exception as e:
 
 ## 🌐 Cross-Origin Policy
 
-For proper PayPal popup functionality, ensure your payment view includes:
+For proper PayPal popup functionality, we ensured payment view includes:
 
 ```python
 response['Cross-Origin-Opener-Policy'] = 'same-origin-allow-popups'
