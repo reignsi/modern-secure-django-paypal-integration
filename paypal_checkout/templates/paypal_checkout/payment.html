@@ -1,0 +1,79 @@
+{% extends "base.html" %}
+{% block content %}
+
+<div class="payment-summary">
+  <p>Subtotal: ${{ totals.base_amount }}</p>
+  <p>Shipping: {{ totals.shipping_message }}</p>
+  <p><strong>Total: ${{ totals.total_amount }}</strong></p>
+</div>
+
+{% if load_paypal_js %}
+<div id="paypal-button-container"></div>
+
+<script src="https://www.paypal.com/sdk/js?client-id={{ PAYPAL_CLIENT_ID }}&currency=USD"></script>
+<script>
+  function getCookie(name) {
+    const match = document.cookie.match('(^|;)\\s*' + name + '\\s*=\\s*([^;]+)');
+    return match ? match.pop() : '';
+  }
+  const csrftoken = getCookie('csrftoken');
+
+  paypal.Buttons({
+    // The browser never states a price here. createOrder asks the
+    // server to create the PayPal order using its own calculation of
+    // the cart total, and only passes back the order ID PayPal
+    // issued. There is nothing in this request for a person to edit
+    // in devtools that would change what gets charged, the amount
+    // isn't here to edit.
+    createOrder: function (data, actions) {
+      return fetch("{% url 'create_order' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (orderData) {
+          if (orderData.error) {
+            throw new Error(orderData.error);
+          }
+          return orderData.id;
+        });
+    },
+
+    onApprove: function (data, actions) {
+      // data.orderID here is PayPal's own ID for the order the server
+      // created above, not anything the client invented. The server
+      // re-verifies it independently in complete_payment() before
+      // creating a local Order, this call just tells the server the
+      // approval happened so it can go check.
+      return fetch("{% url 'complete_payment' %}", {
+        method: "POST",
+        headers: {
+          "X-CSRFToken": csrftoken,
+          "Content-Type": "application/x-www-form-urlencoded",
+        },
+        body: "orderID=" + encodeURIComponent(data.orderID),
+      })
+        .then(function (res) { return res.json(); })
+        .then(function (result) {
+          if (result.success) {
+            window.location.href = "/order-confirmation/";
+          } else {
+            alert(result.error || "Payment could not be completed.");
+          }
+        });
+    },
+
+    onError: function (err) {
+      console.error("PayPal Buttons error:", err);
+      alert("Something went wrong with PayPal. Please try again.");
+    },
+  }).render('#paypal-button-container');
+</script>
+{% else %}
+<p>Please add items to your cart and complete your shipping details before checking out.</p>
+{% endif %}
+
+{% endblock %}
